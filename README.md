@@ -1,4 +1,35 @@
-# BotNotes
-Bot in Telegram for publishing and viewing notes
-The user is offered a user-friendly and simple interface through which he can quickly and easily find/send a note.
-A system has also been implemented to moderate the summary before posting it.
+**BotNotes** — это Telegram-бот для публикации и просмотра студенческих заметок. Бот предоставляет удобный интерфейс, позволяя быстро находить и загружать учебные материалы. Все загруженные заметки проходят модерацию перед публикацией.
+
+## ✨ Возможности
+
+- Удобный интерфейс с понятными командами
+- Модерация заметок перед публикацией
+- Разделение заметок по курсам и преподавателям
+- Админ-панель для управления пользователями и контентом
+
+## 🛠️ Технологии
+
+- **Язык**: Python 3.8+
+- **Фреймворк**: aiogram 3.x (асинхронное взаимодействие с Telegram API)
+- **ORM**: Tortoise ORM
+- **База данных**: SQLite
+- **Хранилище сессий**: Redis
+- **Логирование**: loguru
+
+## 🚀 Установка и запуск
+
+### Требования
+
+- Python 3.8+
+- Токен бота от [@BotFather](https://t.me/botfather)
+- Установленный и запущенный Redis
+
+### Установка
+
+```bash
+git clone https://github.com/Aziza-sh/BotNotes.git
+cd BotNotes
+python -m venv venv
+source venv/bin/activate      # Linux/macOS
+# venv\Scripts\activate       # Windows
+pip install -r requirements.txt
