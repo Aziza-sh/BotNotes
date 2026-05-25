@@ -55,12 +55,13 @@ async def change_uploaded_notes_service(user_id: int, amount: int):
 
 
 @atomic()
-async def create_note_service(user_id: int, course: int, teacher: str, note_name: str, note_path: str):
+async def create_note_service(user_id: int, building_name:str, course: int, teacher: str, note_name: str, note_path: str):
     user_data = await User.get_or_none(user_id=user_id)
     if not user_data:
         return {"message": "Пользователь не найден"}
 
     note = await Notes.create(
+        building_name=building_name,
         user=user_data,
         course=course,
         teacher=teacher,
@@ -72,12 +73,13 @@ async def create_note_service(user_id: int, course: int, teacher: str, note_name
       
 
 @atomic()
-async def create_note_service(user_id: int, course: int, teacher: str, note_name: str, note_path: str):
+async def create_note_service(user_id: int, building_name:str, course: int, teacher: str, note_name: str, note_path: str):
     user_data = await User.get_or_none(user_id=user_id)
     if not user_data:
         return {"message": "Пользователь не найден"}
 
     note = await Notes.create(
+        building_name=building_name,
         user=user_data,
         course=course,
         teacher=teacher,
@@ -96,6 +98,7 @@ async def get_notes_service():
             "id": note.id,
             "is_deleted": note.is_deleted,
             "user_id": note.user_id,
+            "building_name": note.building_name,
             "course": note.course,
             "teacher": note.teacher,
             "note_name": note.note_name,
@@ -119,6 +122,7 @@ async def get_teacher_note_service(name: str, course: int):
             "id": note.id,
             "is_deleted": note.is_deleted,
             "user_id": note.user_id,
+            "building_name": note.building_name,
             "course": note.course,
             "teacher": note.teacher,
             "note_name": note.note_name,

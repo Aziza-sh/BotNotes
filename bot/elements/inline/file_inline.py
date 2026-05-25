@@ -7,12 +7,22 @@ from elements.teachers import (
 )
 from database.services import get_teachers
 
+def buildings_buttons():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Финуниверситет", callback_data='build fin'), InlineKeyboardButton(text="ЛФУ", callback_data='build lfu')],
+        [InlineKeyboardButton(text="test | mfk", callback_data='build mfk'), InlineKeyboardButton(text="test | kip", callback_data='build kip')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 def courses_buttons():
     inline_kb_list = [
         [InlineKeyboardButton(text="1 курс", callback_data='course 1'), InlineKeyboardButton(text="2 курс", callback_data='course 2')],
         [InlineKeyboardButton(text="3 курс", callback_data='course 3'), InlineKeyboardButton(text="4 курс", callback_data='course 4')],
     ]
+    navigation_buttons = []
+    navigation_buttons.append(
+        InlineKeyboardButton(text="Выбор учебного заведения ↩", callback_data='back_to_buildings')
+    )
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
@@ -64,12 +74,22 @@ def teachers_buttons(course: str | int, page: int = 0, in_page: int = 7):
     inline_kb_list.append(navigation_buttons)
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
+# ПРОСМОТР
+def buildings_buttons_view():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Финуниверситет", callback_data='build_fin'), InlineKeyboardButton(text="ЛФУ", callback_data='build_lfu')],
+        [InlineKeyboardButton(text="test | mfk", callback_data='build_mfk'), InlineKeyboardButton(text="test | kip", callback_data='build_kip')],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-def courses_buttons_view():
+def courses_buttons_view(building: str):
     inline_kb_list = [
         [InlineKeyboardButton(text="1 курс", callback_data='course_1'), InlineKeyboardButton(text="2 курс", callback_data='course_2')],
         [InlineKeyboardButton(text="3 курс", callback_data='course_3'), InlineKeyboardButton(text="4 курс", callback_data='course_4')],
     ]
+    inline_kb_list.append([
+            InlineKeyboardButton(text="Выбор места обучения ↩", callback_data='back_to_buildings_view')
+        ])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 

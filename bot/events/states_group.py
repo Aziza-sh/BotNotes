@@ -19,6 +19,7 @@ class Utils(StatesGroup):
 
 
 class Registration(StatesGroup):
+    building_name = State()
     course_number = State()
     teacher_name = State()
     lesson_name = State()

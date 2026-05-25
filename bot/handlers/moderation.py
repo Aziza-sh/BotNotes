@@ -22,6 +22,7 @@ async def approve_note(callback: CallbackQuery, bot):
         message = callback.message
         caption = message.caption
 
+        building = re.search(r"Место обучения: (\d+)", caption).group(1)
         course = re.search(r"Курс: (\d+)", caption).group(1)
         teacher = re.search(r"Преподаватель: (.+?)\n", caption).group(1)
         note_name = re.search(r"Конспект: (.+?)(?:\n|$)", caption).group(1)
@@ -40,6 +41,7 @@ async def approve_note(callback: CallbackQuery, bot):
         file_path = await save_file_to_storage(file_id, file_type, bot)
         await create_note_service(
             user_id=int(user_id),
+            building_name=building,
             course=int(course),
             teacher=teacher,
             note_name=note_name,

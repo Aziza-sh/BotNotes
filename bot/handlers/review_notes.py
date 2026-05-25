@@ -4,12 +4,14 @@ from aiogram.types import (
 )
 from aiogram.types import FSInputFile
 import os
+from elements.keybord.kb import cancel_kb
 from aiogram.fsm.context import FSMContext
 from elements.keybord.text_on_kb import view
 from elements.inline.notes_inline import create_notes_buttons
 from elements.inline.file_inline import (
     courses_buttons_view,
-    teachers_buttons_view
+    teachers_buttons_view,
+    buildings_buttons_view
 )
 from database.services import get_teacher_note_service
 from database.models import Notes  
@@ -17,23 +19,54 @@ from database.models import Notes
 router = Router()
 
 
-# Выбор курса
+# Выбор места обучения
 @router.message(F.text == view)
-async def view_handler(message: Message):
+async def view_handler(message: Message, state: FSMContext):
     await message.answer(
-        text="Выберите курс:",
-        reply_markup=courses_buttons_view()
+        text="✍", 
+        reply_markup=cancel_kb()
+    )
+
+    await message.answer(
+        text="Выберите учебное заведение:",
+        reply_markup=buildings_buttons_view()
     )
 
 
-# Вернуться к выбору курса
-@router.callback_query(F.data == "back_to_course_view")
+
+# Вернуться к выбору места обучение 
+@router.callback_query(F.data == "back_to_buildings_view")
 async def back_to_course_view_handler(callback: CallbackQuery):
     await callback.message.edit_text(
-        text="Выберите курс:",
-        reply_markup=courses_buttons_view()
+        text="Выберите место обучения:",
+        reply_markup=buildings_buttons_view()
     )
 
+
+# Выбор курса
+@router.callback_query(F.data.startswith("build_"))
+async def buildings_name_view(callback: CallbackQuery, state: FSMContext):
+    building_name = callback.data.split("_")[1]
+    await state.update_data(building_name=building_name)
+    await callback.message.edit_text(
+        text="Выберите курс:",
+        reply_markup=courses_buttons_view(building=building_name)
+    )
+
+@router.callback_query(F.data == "back_to_course_view")
+async def back_to_course_view_handler(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    building_name = data.get('building_name')
+    if not building_name:
+        # Если вдруг потеряли здание, предложим начать заново
+        return await callback.message.edit_text(
+            "Ошибка. Выберите место обучения заново:",
+            reply_markup=buildings_buttons_view()
+        )
+    await callback.message.edit_text(
+        text="Выберите курс:",
+        reply_markup=courses_buttons_view(building=building_name)
+    )
 
 # Выбор преподавателя из базы в зависимости от курса
 @router.callback_query(F.data.startswith("course_"))
