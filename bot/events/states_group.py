@@ -26,17 +26,11 @@ class Registration(StatesGroup):
     upload_file = State()
 
 
-not_in_state_filter = ~StateFilter(
-    Utils.mailing,
-    InsertText.text
-)
+not_in_state_filter = ~StateFilter(Utils.mailing, InsertText.text)
 
 
 # --- Завершение заполнения формы --- #
 @router.message(F.text == cancel)
 async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(
-        text="Запись текста прервана 🤍", 
-        reply_markup=main_kb()
-    )
+    await message.answer(text="Запись текста прервана 🤍", reply_markup=main_kb())

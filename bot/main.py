@@ -11,18 +11,15 @@ from tortoise import Tortoise, run_async
 from loguru import logger
 
 from config.cfg import (
-    cfg, ADMIN_CHATS,
+    cfg,
+    ADMIN_CHATS,
     NOTES_STORAGE_PATH,
     MODER_CHANNEL_ID,
-    TEST_MODER_CHANNEL_ID
+    TEST_MODER_CHANNEL_ID,
 )
 from events import error_handler, states_group
 from handlers import commands_handler
-from handlers import (
-    review_notes,
-    moderation,
-    upload
-)
+from handlers import review_notes, moderation, upload, inline_notes
 from handlers.utils import mailing
 
 MODE: Literal["DEV", "PROD"] = "DEV"
@@ -36,6 +33,7 @@ else:
 
 # --- Автоматический поиск рабочего прокси --- #
 PROXY_PORTS = [10809, 10808, 11111, 7890, 2334, 1080, 8080]
+
 
 def find_proxy() -> str | None:
     for port in PROXY_PORTS:
@@ -61,7 +59,7 @@ else:
 bot = Bot(
     token=TOKEN,
     session=session,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
 )
 bot.config = cfg
 bot.ADMIN_CHATS = ADMIN_CHATS
@@ -82,7 +80,8 @@ async def main():
         review_notes.router,
         upload.router,
         moderation.router,
-        mailing.router
+        mailing.router,
+        inline_notes.router,
     )
     await bot.delete_webhook(drop_pending_updates=True)
     logger.success("Successfully launched")
@@ -99,8 +98,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # --- Подгрузка базы данных --- #
 async def init_db():
     await Tortoise.init(
-        db_url=f'sqlite://{BASE_DIR}/database/database.db',
-        modules={'models': ['database.models']}
+        db_url=f"sqlite://{BASE_DIR}/database/database.db",
+        modules={"models": ["database.models"]},
     )
     await Tortoise.generate_schemas()
 

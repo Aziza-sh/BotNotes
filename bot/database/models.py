@@ -21,10 +21,8 @@ class BaseORM(Model):
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
 
-    # Мягкое удаление
     is_deleted: bool = fields.BooleanField(default=False)
 
-    # Версия объекта
     version: int = fields.IntField(default=0)
 
     def __init_subclass__(cls, **kwargs):
@@ -36,7 +34,7 @@ class BaseORM(Model):
 
 
 class User(BaseORM):
-    # Telegram user id
+
     user_id: int = fields.BigIntField(unique=True)
 
     uploaded_notes: int = fields.IntField(default=0)
@@ -48,20 +46,26 @@ class User(BaseORM):
 
 
 class Notes(BaseORM):
+
     user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         "models.User",
         related_name="notes",
         on_delete=fields.CASCADE,
     )
 
+    telegram_file_id: str = fields.TextField(null=True)
+
+    telegram_file_type: str = fields.CharField(max_length=20, null=True)
+
     building_name: str = fields.CharField(max_length=200)
-    course: int = fields.IntField(default=0)
+
+    course: int = fields.IntField()
 
     teacher: str = fields.CharField(max_length=300)
 
-    note_name: str = fields.CharField(max_length=200)
+    note_name: str = fields.CharField(max_length=300)
 
-    note_path: str = fields.CharField(max_length=300)
+    note_path: str = fields.CharField(max_length=500)
 
     class Meta:
         table = "notes"

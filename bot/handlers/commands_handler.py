@@ -2,9 +2,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.markdown import hlink
-from aiogram.types import (
-    Message, ReplyKeyboardRemove
-)
+from aiogram.types import Message, ReplyKeyboardRemove
 
 from database.services import get_or_create_user_service, get_users_service
 from functions.greeting import send_greeting
@@ -23,19 +21,13 @@ router = Router()
 async def start_cmd(message: Message, state: FSMContext):
     # Если стадия существует, выходим из неё
     if await state.get_state() is not None:
-        await message.answer(
-            text="🔎✨",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        await message.answer(text="🔎✨", reply_markup=ReplyKeyboardRemove())
         await state.clear()
 
     await get_or_create_user_service(user_id=message.from_user.id)
 
-    await message.answer(
-        text=f"{send_greeting(username=message.from_user.first_name)}\
-            \nВыберите, что Вы хотите сделать:",
-        reply_markup=main_kb()
-    )
+    await message.answer(text=f"{send_greeting(username=message.from_user.first_name)}\
+            \nВыберите, что Вы хотите сделать:", reply_markup=main_kb())
 
 
 # --- Информационнная панель --- #
@@ -43,15 +35,12 @@ async def start_cmd(message: Message, state: FSMContext):
 async def info_cmd(message: Message, state: FSMContext):
     # Если стадия существует, выходим из неё
     if await state.get_state() is not None:
-        await message.answer(
-            text="🔎✨",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        await message.answer(text="🔎✨", reply_markup=ReplyKeyboardRemove())
         await state.clear()
 
     await get_or_create_user_service(user_id=message.from_user.id)
 
-    botname = message.bot.config['SETTINGS']['name']
+    botname = message.bot.config["SETTINGS"]["name"]
     message_text = (
         f"<b>Вы используете  {hlink(botname, support_link)} v{message.bot.config['SETTINGS']['version']}:</b>"
         f"\n\n 1. Данный бот предназначен для просмотра и выкладывания конспектов, чтобы все теория, предоставляемая преподавателями была достпуна в любое время. \n\n"
@@ -60,10 +49,7 @@ async def info_cmd(message: Message, state: FSMContext):
         f" 4. Чтобы связаться с поддержкой бота, присоединитесь к <b>{hlink('группе', support_link)}</b> и задайте вопрос в нужном топике."
     )
 
-    await message.answer(
-        text=message_text,
-        reply_markup=support_button().as_markup()
-    )
+    await message.answer(text=message_text, reply_markup=support_button().as_markup())
 
 
 # --- Отправка статистики --- #
@@ -71,10 +57,7 @@ async def info_cmd(message: Message, state: FSMContext):
 async def statistic_cmd(message: Message, state: FSMContext):
     # Если стадия существует, выходим из неё
     if await state.get_state() is not None:
-        await message.answer(
-            text="🔎✨",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        await message.answer(text="🔎✨", reply_markup=ReplyKeyboardRemove())
         await state.clear()
 
     if int(message.chat.id) in map(int, message.bot.ADMIN_CHATS):
@@ -84,10 +67,8 @@ async def statistic_cmd(message: Message, state: FSMContext):
         else:
             users_count = "<b>Информации о пользователях нет</b>!"
 
-        await message.answer(
-            text=f"<b>СТАТИСТИКА:</b>\
-                \n\n{users_count}"
-        )
+        await message.answer(text=f"<b>СТАТИСТИКА:</b>\
+                \n\n{users_count}")
 
 
 # --- Перейти в рассылку -> Написать текст --- #
@@ -95,15 +76,12 @@ async def statistic_cmd(message: Message, state: FSMContext):
 async def mailing_cmd(message: Message, state: FSMContext):
     # Если стадия существует, выходим из неё
     if await state.get_state() is not None:
-        await message.answer(
-            text="🔎✨",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        await message.answer(text="🔎✨", reply_markup=ReplyKeyboardRemove())
         await state.clear()
 
     if int(message.chat.id) in map(int, message.bot.ADMIN_CHATS):
         await message.answer(
-            text="💥 Введите <u>текст</u> или прикрепите <u>медиаконтент</u>, который будет отправлен всем пользователям:", 
-            reply_markup=cancel_kb()
+            text="💥 Введите <u>текст</u> или прикрепите <u>медиаконтент</u>, который будет отправлен всем пользователям:",
+            reply_markup=cancel_kb(),
         )
         await state.set_state(Utils.mailing)

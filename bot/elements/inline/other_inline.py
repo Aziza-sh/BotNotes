@@ -7,9 +7,7 @@ def support_button() -> InlineKeyboardBuilder:
     builder = InlineKeyboardBuilder()
     builder.add(
         InlineKeyboardButton(
-            text="Поддержка",
-            url=support_link,
-            callback_data=f"connect_with_support"
+            text="Поддержка", url=support_link, callback_data=f"connect_with_support"
         )
     )
     return builder

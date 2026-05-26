@@ -13,7 +13,7 @@ from events.states_group import Registration
 from elements.inline.file_inline import (
     buildings_buttons,
     courses_buttons,
-    teachers_buttons
+    teachers_buttons,
 )
 
 router = Router()
@@ -22,14 +22,10 @@ router = Router()
 # Начало выкладывания
 @router.message(F.text == share)
 async def start_share_handler(message: Message, state: FSMContext):
-    await message.answer(
-        text="✍",
-        reply_markup=cancel_kb()
-    )
+    await message.answer(text="✍", reply_markup=cancel_kb())
 
     await message.answer(
-        text="Выберите учебное заведение:",
-        reply_markup=buildings_buttons()
+        text="Выберите учебное заведение:", reply_markup=buildings_buttons()
     )
 
     await state.set_state(Registration.building)
@@ -43,8 +39,7 @@ async def building_select_handler(callback: CallbackQuery, state: FSMContext):
     await state.update_data(building=building)
 
     await callback.message.edit_text(
-        text="Выберите курс:",
-        reply_markup=courses_buttons()
+        text="Выберите курс:", reply_markup=courses_buttons()
     )
 
     await state.set_state(Registration.course_number)
@@ -54,8 +49,7 @@ async def building_select_handler(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "back_to_building")
 async def back_to_building_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        text="Выберите учебное заведение:",
-        reply_markup=buildings_buttons()
+        text="Выберите учебное заведение:", reply_markup=buildings_buttons()
     )
 
     await state.set_state(Registration.building)
@@ -65,8 +59,7 @@ async def back_to_building_handler(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "back_to_course")
 async def back_to_course_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        text="Выберите курс:",
-        reply_markup=courses_buttons()
+        text="Выберите курс:", reply_markup=courses_buttons()
     )
 
     await state.set_state(Registration.course_number)
@@ -81,7 +74,7 @@ async def course_select_handler(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text="Выберите преподавателя:",
-        reply_markup=teachers_buttons(course=course_num, page=0)
+        reply_markup=teachers_buttons(course=course_num, page=0),
     )
 
     await state.set_state(Registration.teacher_name)
@@ -97,7 +90,7 @@ async def teachers_pagination_handler(callback: CallbackQuery, state: FSMContext
 
     await callback.message.edit_text(
         text="Выберите преподавателя:",
-        reply_markup=teachers_buttons(course=course_num, page=page)
+        reply_markup=teachers_buttons(course=course_num, page=page),
     )
 
 
@@ -113,8 +106,7 @@ async def teacher_select_handler(callback: CallbackQuery, state: FSMContext):
     await state.update_data(teacher_name=teacher_name)
 
     await callback.message.edit_text(
-        text="Напишите название конспекта (10-150 символов):",
-        reply_markup=None
+        text="Напишите название конспекта (10-150 символов):", reply_markup=None
     )
 
     await state.set_state(Registration.lesson_name)
@@ -123,18 +115,14 @@ async def teacher_select_handler(callback: CallbackQuery, state: FSMContext):
 # Название конспекта
 @router.message(Registration.lesson_name)
 async def lesson_name_handler(message: Message, state: FSMContext):
-    lesson_name = re.sub(r'[<>]', '', message.text[:150])
+    lesson_name = re.sub(r"[<>]", "", message.text[:150])
 
     if len(lesson_name) < 10:
-        return await message.answer(
-            "Название должно быть от 10 до 150 символов"
-        )
+        return await message.answer("Название должно быть от 10 до 150 символов")
 
     await state.update_data(lesson_name=lesson_name)
 
-    await message.answer(
-        text="Отправьте конспект (фото или документ):"
-    )
+    await message.answer(text="Отправьте конспект (фото или документ):")
 
     await state.set_state(Registration.upload_file)
 
@@ -159,9 +147,8 @@ async def upload_file_handler(message: Message, state: FSMContext, bot):
             photo=message.photo[-1].file_id,
             caption=caption,
             reply_markup=moderation_button(
-                user_id=message.from_user.id,
-                message_id=message.message_id
-            ).as_markup()
+                user_id=message.from_user.id, message_id=message.message_id
+            ).as_markup(),
         )
 
     elif message.document:
@@ -170,19 +157,15 @@ async def upload_file_handler(message: Message, state: FSMContext, bot):
             document=message.document.file_id,
             caption=caption,
             reply_markup=moderation_button(
-                user_id=message.from_user.id,
-                message_id=message.message_id
-            ).as_markup()
+                user_id=message.from_user.id, message_id=message.message_id
+            ).as_markup(),
         )
 
     else:
-        return await message.answer(
-            "Отправьте фото или документ"
-        )
+        return await message.answer("Отправьте фото или документ")
 
     await message.answer(
-        text="Конспект отправлен на модерацию!",
-        reply_markup=ReplyKeyboardRemove()
+        text="Конспект отправлен на модерацию!", reply_markup=ReplyKeyboardRemove()
     )
 
     await state.clear()

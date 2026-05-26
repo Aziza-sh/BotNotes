@@ -4,13 +4,22 @@ from aiogram import Router, F
 from aiogram.types import ErrorEvent
 from aiogram.types import CallbackQuery
 from aiogram.exceptions import (
-    AiogramError, TelegramAPIError, CallbackAnswerException, 
-    SceneException, UnsupportedKeywordArgument,
-    TelegramRetryAfter, TelegramMigrateToChat, 
-    TelegramBadRequest, TelegramNotFound, TelegramConflictError,
-    TelegramUnauthorizedError, TelegramForbiddenError, 
-    TelegramServerError, RestartingTelegram, 
-    TelegramEntityTooLarge, ClientDecodeError
+    AiogramError,
+    TelegramAPIError,
+    CallbackAnswerException,
+    SceneException,
+    UnsupportedKeywordArgument,
+    TelegramRetryAfter,
+    TelegramMigrateToChat,
+    TelegramBadRequest,
+    TelegramNotFound,
+    TelegramConflictError,
+    TelegramUnauthorizedError,
+    TelegramForbiddenError,
+    TelegramServerError,
+    RestartingTelegram,
+    TelegramEntityTooLarge,
+    ClientDecodeError,
 )
 
 router = Router()
@@ -40,7 +49,7 @@ async def errors_handler(event: ErrorEvent):
 
     elif isinstance(event.exception, TelegramServerError):
         logger.warning(f"TelegramServerError: {event.exception}")
-        
+
     elif isinstance(event.exception, CallbackAnswerException):
         logger.warning(f"CallbackException: {event.exception}")
 
@@ -68,9 +77,9 @@ async def errors_handler(event: ErrorEvent):
 
     elif isinstance(event.exception, TelegramAPIError):
         logger.error(f"TelegramAPIError: {event.exception}")
-    
+
     elif isinstance(event.exception, TelegramUnauthorizedError):
         logger.error(f"TelegramUnauthorizedError: {event.exception}")
-    
+
     elif isinstance(event.exception, RestartingTelegram):
         logger.error(f"RestartingTelegram: {event.exception}")
