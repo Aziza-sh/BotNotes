@@ -1,77 +1,58 @@
 import os
 import shutil
 
-from tortoise.queryset import QuerySet
 from tortoise.transactions import atomic
 
 from .models import User, Notes
 
-# =========================
-# USERS
-# =========================
+# ─── USERS ───────────────────────────────────────────────────
 
 
-async def get_users_service():
-    users_data = await User.all()
-
-    return [{"user_id": user.user_id} for user in users_data]
+async def get_users_service() -> list[dict]:
+    """Вернуть список всех пользователей (только Telegram user_id)."""
+    users = await User.all()
+    return [{"user_id": u.user_id} for u in users]
 
 
 @atomic()
-async def get_or_create_user_service(user_id: int):
-
-    user = await User.get_or_none(user_id=user_id)
-
-    if not user:
-        user = await User.create(user_id=user_id)
-
+async def get_or_create_user_service(user_id: int) -> dict:
+    """Найти пользователя по Telegram ID или создать нового."""
+    user, _ = await User.get_or_create(user_id=user_id)
     return {"user_id": user.user_id}
 
 
 @atomic()
-async def is_admin_service(user_id: int):
-
+async def is_admin_service(user_id: int) -> dict:
+    """Проверить, является ли пользователь администратором."""
     user = await User.get_or_none(user_id=user_id)
-
     if not user:
         return {"message": "Пользователь не найден"}
-
     return {"status": user.is_admin, "message": ""}
 
 
 @atomic()
-async def change_admin_service(user_id: int, status: bool):
-
+async def change_admin_service(user_id: int, status: bool) -> dict:
+    """Установить или снять права администратора."""
     user = await User.get_or_none(user_id=user_id)
-
     if not user:
         return {"message": "Пользователь не найден"}
-
     user.is_admin = status
-
     await user.save()
-
     return {"message": ""}
 
 
 @atomic()
-async def change_uploaded_notes_service(user_id: int, amount: int):
-
+async def change_uploaded_notes_service(user_id: int, amount: int) -> dict:
+    """Прибавить amount к счётчику загруженных конспектов (может быть отрицательным)."""
     user = await User.get_or_none(user_id=user_id)
-
     if not user:
         return {"message": "Пользователь не найден"}
-
     user.uploaded_notes += amount
-
     await user.save()
-
     return {"message": ""}
 
 
-# =========================
-# NOTES
-# =========================
+# ─── NOTES ───────────────────────────────────────────────────
 
 
 @atomic()
@@ -84,12 +65,10 @@ async def create_note_service(
     note_path: str,
     telegram_file_id: str,
     telegram_file_type: str,
-):
-
-    user = await User.get_or_none(user_id=user_id)
-
-    if not user:
-        return {"message": "Пользователь не найден"}
+) -> dict:
+    
+  
+    user, _ = await User.get_or_create(user_id=user_id)
 
     note = await Notes.create(
         user=user,
@@ -102,146 +81,125 @@ async def create_note_service(
         telegram_file_type=telegram_file_type,
         is_deleted=False,
     )
-
-    return {"data": note, "message": ""}
-
-
-async def get_notes_service():
-
-    notes = await Notes.filter(is_deleted=False)
-
-    return [
-        {
-            "id": note.id,
-            "is_deleted": note.is_deleted,
-            "user_id": note.user_id,
-            "building_name": note.building_name,
-            "course": note.course,
-            "teacher": note.teacher,
-            "note_name": note.note_name,
-            "note_path": note.note_path,
-            "telegram_file_id": note.telegram_file_id,
-        }
-        for note in notes
-    ]
+    return {"data": note, "telegram_user_id": user.user_id, "message": ""}
 
 
-# =========================
-# TEACHERS
-# =========================
+async def get_notes_service() -> list[dict]:
+    
+    notes = await Notes.filter(is_deleted=False).select_related("user")
+    return [_note_to_dict(n) for n in notes]
+
+
+# ─── TEACHERS ────────────────────────────────────────────────
 
 
 @atomic()
-async def get_teachers(course: int, building_name: str):
-
-    teachers_query: QuerySet = (
-        await Notes.filter(course=course, building_name=building_name, is_deleted=False)
+async def get_teachers(course: int, building_name: str) -> list[str]:
+    
+    result: list[str] = (
+        await Notes.filter(
+            course=course,
+            building_name=building_name,
+            is_deleted=False,
+        )
         .distinct()
         .values_list("teacher", flat=True)
     )
+    return sorted(result)
 
-    return sorted(teachers_query)
 
-
-# =========================
-# NOTES BY TEACHER
-# =========================
+# ─── NOTES BY TEACHER ────────────────────────────────────────
 
 
 @atomic()
-async def get_teacher_note_service(name: str, course: int, building_name: str):
-
+async def get_teacher_note_service(
+    name: str,
+    course: int,
+    building_name: str,
+) -> list[dict]:
+    
     notes = await Notes.filter(
-        course=course, building_name=building_name, teacher=name, is_deleted=False
-    ).all()
-
-    return [
-        {
-            "id": note.id,
-            "is_deleted": note.is_deleted,
-            "user_id": note.user_id,
-            "building_name": note.building_name,
-            "course": note.course,
-            "teacher": note.teacher,
-            "note_name": note.note_name,
-            "note_path": note.note_path,
-            "telegram_file_id": note.telegram_file_id,
-        }
-        for note in notes
-    ]
+        course=course,
+        building_name=building_name,
+        teacher=name,
+        is_deleted=False,
+    ).select_related("user")
+    return [_note_to_dict(n) for n in notes]
 
 
-# =========================
-# INLINE SEARCH
-# =========================
+# ─── INLINE SEARCH ───────────────────────────────────────────
 
 
 @atomic()
 async def search_notes_inline(query: str):
 
-    parts = query.lower().split("_")
+    parts = query.split("_") 
 
-    building_name = None
-    course = None
-    teacher = None
-    note_name = None
+    building_name = parts[0] if len(parts) >= 1 and parts[0] else None
+    course = int(parts[1]) if len(parts) >= 2 and parts[1].isdigit() else None
+    teacher = parts[2] if len(parts) >= 3 and parts[2] else None
+    note_name = " ".join(parts[3:]) if len(parts) >= 4 else None
 
-    if len(parts) >= 1:
-        building_name = parts[0]
-
-    if len(parts) >= 2:
-        try:
-            course = int(parts[1])
-        except:
-            course = None
-
-    if len(parts) >= 3:
-        teacher = parts[2]
-
-    if len(parts) >= 4:
-        note_name = " ".join(parts[3:])
-
-    filters = {"is_deleted": False}
-
+    filters: dict = {"is_deleted": False}
     if building_name:
         filters["building_name__icontains"] = building_name
-
     if course:
         filters["course"] = course
-
     if teacher:
         filters["teacher__icontains"] = teacher
 
-    queryset = Notes.filter(**filters)
-
+    qs = Notes.filter(**filters)
     if note_name:
-        queryset = queryset.filter(note_name__icontains=note_name)
+        qs = qs.filter(note_name__icontains=note_name)
 
-    return await queryset.limit(50)
+    return await qs.limit(50)
 
 
-# =========================
-# DELETE
-# =========================
+# ─── DELETE ──────────────────────────────────────────────────
 
 
 @atomic()
-async def delete_note_service(note_id: int):
-
+async def delete_note_service(note_id: int) -> dict:
+    
     note = await Notes.get_or_none(id=note_id)
-
     if not note:
         return {"message": "Конспект не найден"}
 
-    # Удаление файла
     if note.note_path and os.path.exists(note.note_path):
-
         if os.path.isfile(note.note_path):
             os.remove(note.note_path)
-
         elif os.path.isdir(note.note_path):
             shutil.rmtree(note.note_path, ignore_errors=True)
 
     await note.delete()
-
     return {"message": ""}
+
+
+# ─── HELPERS ─────────────────────────────────────────────────
+
+
+def _note_to_dict(note: Notes) -> dict:
+
+    return {
+        "id": note.id,
+        "is_deleted": note.is_deleted,
+        "user_id": note.user.user_id, 
+        "building_name": note.building_name,
+        "course": note.course,
+        "teacher": note.teacher,
+        "note_name": note.note_name,
+        "note_path": note.note_path,
+        "telegram_file_id": note.telegram_file_id,
+        "telegram_file_type": note.telegram_file_type,  
+    }
+
+
+@atomic()
+async def get_note_by_id_service(note_id: int) -> Notes | None:
+
+
+    return await Notes.get_or_none(
+        id=note_id,
+        is_deleted=False,
+    )
+

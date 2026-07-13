@@ -9,6 +9,7 @@ from elements.keybord.kb import cancel_kb
 from elements.keybord.text_on_kb import view
 
 from elements.inline.notes_inline import create_notes_buttons
+from elements.inline.note_ai import note_ai_keyboard
 
 from elements.inline.file_inline import (
     courses_buttons_view,
@@ -16,16 +17,12 @@ from elements.inline.file_inline import (
     buildings_buttons_view,
 )
 
+
 from database.services import get_teacher_note_service
 
 from database.models import Notes
 
 router = Router()
-
-
-# =========================
-# НАЧАЛО ПРОСМОТРА
-# =========================
 
 
 @router.message(F.text == view)
@@ -43,11 +40,6 @@ async def view_handler(message: Message, state: FSMContext):
         traceback.print_exc()
 
 
-# =========================
-# НАЗАД К ЗДАНИЯМ
-# =========================
-
-
 @router.callback_query(F.data == "back_to_buildings_view")
 async def back_to_buildings_handler(callback: CallbackQuery, state: FSMContext):
     try:
@@ -59,11 +51,6 @@ async def back_to_buildings_handler(callback: CallbackQuery, state: FSMContext):
 
     except Exception:
         traceback.print_exc()
-
-
-# =========================
-# ВЫБОР ЗДАНИЯ
-# =========================
 
 
 @router.callback_query(F.data.startswith("build_"))
@@ -80,11 +67,6 @@ async def building_selection_handler(callback: CallbackQuery, state: FSMContext)
 
     except Exception:
         traceback.print_exc()
-
-
-# =========================
-# НАЗАД К КУРСАМ
-# =========================
 
 
 @router.callback_query(F.data == "back_to_course_view")
@@ -109,11 +91,6 @@ async def back_to_course_handler(callback: CallbackQuery, state: FSMContext):
         traceback.print_exc()
 
 
-# =========================
-# ВЫБОР КУРСА
-# =========================
-
-
 @router.callback_query(F.data.startswith("course_"))
 async def course_selection_handler(callback: CallbackQuery, state: FSMContext):
     try:
@@ -122,8 +99,13 @@ async def course_selection_handler(callback: CallbackQuery, state: FSMContext):
         await state.update_data(course_number=course_num)
 
         data = await state.get_data()
-
         building_name = data.get("building_name")
+
+        if not building_name:
+            return await callback.message.edit_text(
+                text="Ошибка состояния. Выберите учебное заведение заново:",
+                reply_markup=buildings_buttons_view(),
+            )
 
         await callback.message.edit_text(
             text="Выберите преподавателя:",
@@ -136,11 +118,6 @@ async def course_selection_handler(callback: CallbackQuery, state: FSMContext):
         traceback.print_exc()
 
 
-# =========================
-# ПАГИНАЦИЯ ПРЕПОДАВАТЕЛЕЙ
-# =========================
-
-
 @router.callback_query(F.data.startswith("page_"))
 async def paginate_teachers_handler(callback: CallbackQuery, state: FSMContext):
     try:
@@ -150,10 +127,15 @@ async def paginate_teachers_handler(callback: CallbackQuery, state: FSMContext):
         page = int(parts[2])
 
         data = await state.get_data()
-
         building_name = data.get("building_name")
 
         await state.update_data(course_number=course_num)
+
+        if not building_name:
+            return await callback.message.edit_text(
+                text="Ошибка состояния. Выберите учебное заведение заново:",
+                reply_markup=buildings_buttons_view(),
+            )
 
         await callback.message.edit_text(
             text="Выберите преподавателя:",
@@ -164,11 +146,6 @@ async def paginate_teachers_handler(callback: CallbackQuery, state: FSMContext):
 
     except Exception:
         traceback.print_exc()
-
-
-# =========================
-# ВЫБОР ПРЕПОДАВАТЕЛЯ
-# =========================
 
 
 @router.callback_query(F.data.startswith("t_"))
@@ -208,11 +185,6 @@ async def teacher_selection_handler(callback: CallbackQuery, state: FSMContext):
         traceback.print_exc()
 
 
-# =========================
-# ПРОСМОТР КОНСПЕКТА
-# =========================
-
-
 @router.callback_query(F.data.startswith("note_"))
 async def note_selection_handler(callback: CallbackQuery):
     try:
@@ -223,13 +195,8 @@ async def note_selection_handler(callback: CallbackQuery):
         if not note:
             return await callback.answer("Конспект не найден 💔", show_alert=True)
 
-        # =========================
-        # ЕСЛИ ЕСТЬ TELEGRAM FILE ID
-        # =========================
-
         if note.telegram_file_id:
 
-            # PHOTO
             if note.telegram_file_type == "photo":
 
                 await callback.message.answer_photo(
@@ -241,7 +208,6 @@ async def note_selection_handler(callback: CallbackQuery):
                     ),
                 )
 
-            # DOCUMENT
             else:
 
                 await callback.message.answer_document(
@@ -251,11 +217,8 @@ async def note_selection_handler(callback: CallbackQuery):
                         f"👨‍🏫 {note.teacher}\n"
                         f"🏫 {note.building_name}"
                     ),
+                    reply_markup=note_ai_keyboard(note.id),
                 )
-
-        # =========================
-        # FALLBACK НА ФАЙЛ
-        # =========================
 
         else:
 
@@ -276,6 +239,7 @@ async def note_selection_handler(callback: CallbackQuery):
                     f"👨‍🏫 {note.teacher}\n"
                     f"🏫 {note.building_name}"
                 ),
+                reply_markup=note_ai_keyboard(note.id),
             )
 
         await callback.answer()

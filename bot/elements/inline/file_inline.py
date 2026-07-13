@@ -3,7 +3,8 @@ from elements.teachers import first_course, second_course, third_course, fourth_
 from database.services import get_teachers
 
 
-def buildings_buttons():
+def buildings_buttons() -> InlineKeyboardMarkup:
+
     inline_kb_list = [
         [
             InlineKeyboardButton(text="Финуниверситет", callback_data="build fin"),
@@ -17,7 +18,8 @@ def buildings_buttons():
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-def courses_buttons():
+def courses_buttons() -> InlineKeyboardMarkup:
+
     inline_kb_list = [
         [
             InlineKeyboardButton(text="1 курс", callback_data="course 1"),
@@ -28,18 +30,21 @@ def courses_buttons():
             InlineKeyboardButton(text="4 курс", callback_data="course 4"),
         ],
     ]
-    navigation_buttons = []
-    navigation_buttons.append(
-        InlineKeyboardButton(
-            text="Выбор учебного заведения ↩", callback_data="back_to_buildings"
-        )
+
+    inline_kb_list.append(
+        [
+            InlineKeyboardButton(
+                text="Выбор учебного заведения ↩", callback_data="back_to_building"
+            )
+        ]
     )
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-# Берутся только преподаватели необходимого нам курса
-# Разделение в callback по пробелу
-def teachers_buttons(course: str | int, page: int = 0, in_page: int = 7):
+def teachers_buttons(
+    course: str | int, page: int = 0, in_page: int = 7
+) -> InlineKeyboardMarkup:
+
     match int(course):
         case 1:
             TEACHERS = first_course
@@ -55,17 +60,15 @@ def teachers_buttons(course: str | int, page: int = 0, in_page: int = 7):
     start = page * in_page
     end = start + in_page
     inline_kb_list = []
+
     for full_name in TEACHERS[start:end]:
         name_parts = full_name.split()
-        if not name_parts[
-            0
-        ].isalpha():  # Если есть спец.символы (это уже делает фамилию с большей вероятностью уникальной), берём только фамилию
+        if not name_parts[0].isalpha():
             short_name = name_parts[0][:20]
+        elif len(name_parts) > 1:
+            short_name = f"{name_parts[0][:15]} {name_parts[1][:14]}"
         else:
-            if len(name_parts) > 1:  # Если есть и фамилия и имя
-                short_name = f"{name_parts[0][:15]} {name_parts[1][:14]}"
-            else:  # Если есть только фамилия
-                short_name = name_parts[0][:20]
+            short_name = name_parts[0][:20]
 
         callback_data = f"t {short_name}"
         inline_kb_list.append(
@@ -79,7 +82,6 @@ def teachers_buttons(course: str | int, page: int = 0, in_page: int = 7):
                 text="← Назад", callback_data=f"page {course} {page - 1}"
             )
         )
-
     navigation_buttons.append(
         InlineKeyboardButton(text="Выбор курса ↩", callback_data="back_to_course")
     )
@@ -94,8 +96,8 @@ def teachers_buttons(course: str | int, page: int = 0, in_page: int = 7):
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-# ПРОСМОТР
-def buildings_buttons_view():
+def buildings_buttons_view() -> InlineKeyboardMarkup:
+
     inline_kb_list = [
         [
             InlineKeyboardButton(text="Финуниверситет", callback_data="build_fin"),
@@ -109,7 +111,8 @@ def buildings_buttons_view():
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-def courses_buttons_view(building: str):
+def courses_buttons_view(building: str) -> InlineKeyboardMarkup:
+
     inline_kb_list = [
         [
             InlineKeyboardButton(text="1 курс", callback_data="course_1"),
@@ -130,18 +133,17 @@ def courses_buttons_view(building: str):
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-# Берутся только те преподаватели ИЗ БАЗЫ, чьи конспекты у нас есть
-# Разделение в callback по "_"
 async def teachers_buttons_view(
-    building: str, course: int, page: int = 0, in_page: int = 7
-):
-    TEACHERS = await get_teachers(course=course, building_name=building)
+    course: int,
+    building: str,
+    page: int = 0,
+    in_page: int = 7,
+) -> InlineKeyboardMarkup:
 
+    TEACHERS = await get_teachers(course=course, building_name=building)
     inline_kb_list = []
 
-    # Если преподавателей нет
     if not TEACHERS:
-
         inline_kb_list.append(
             [
                 InlineKeyboardButton(
@@ -149,7 +151,6 @@ async def teachers_buttons_view(
                 )
             ]
         )
-
         inline_kb_list.append(
             [
                 InlineKeyboardButton(
@@ -157,40 +158,35 @@ async def teachers_buttons_view(
                 )
             ]
         )
-
         return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-    # Пагинация
     start = page * in_page
     end = start + in_page
 
     for full_name in TEACHERS[start:end]:
+        name_parts = full_name.split()
+        if not name_parts[0].isalpha():
+            short_name = name_parts[0][:20]
+        elif len(name_parts) > 1:
+            short_name = f"{name_parts[0][:15]}_{name_parts[1][:14]}"
+        else:
+            short_name = name_parts[0][:20]
 
-        # callback_data не должна быть длинной
-        callback_teacher = full_name.replace(" ", "_")[:50]
-
+        callback_data = f"t_{short_name}"
         inline_kb_list.append(
-            [
-                InlineKeyboardButton(
-                    text=full_name, callback_data=f"t_{callback_teacher}"
-                )
-            ]
+            [InlineKeyboardButton(text=full_name, callback_data=callback_data)]
         )
 
-    # Кнопки навигации
     navigation_buttons = []
-
     if page > 0:
         navigation_buttons.append(
             InlineKeyboardButton(
                 text="← Назад", callback_data=f"page_{course}_{page - 1}"
             )
         )
-
     navigation_buttons.append(
         InlineKeyboardButton(text="Выбор курса ↩", callback_data="back_to_course_view")
     )
-
     if end < len(TEACHERS):
         navigation_buttons.append(
             InlineKeyboardButton(
@@ -199,5 +195,4 @@ async def teachers_buttons_view(
         )
 
     inline_kb_list.append(navigation_buttons)
-
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

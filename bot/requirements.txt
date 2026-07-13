@@ -1,5 +1,29 @@
-aiogram>=3.28.2
-tortoise-orm>=1.1.7
-loguru>=0.7.2
-redis
-aiohttp-socks
+# Telegram
+aiogram>=3.22.0
+aiohttp-socks>=0.10.1
+
+# API
+fastapi>=0.116.0
+uvicorn[standard]>=0.35.0
+
+# Database
+tortoise-orm>=0.25.1
+aiosqlite>=0.21.0
+
+# Logging
+loguru>=0.7.3
+
+# Cache
+redis>=6.2.0
+
+#AI
+python-docx
+langchain
+langchain-core
+langchain-ollama
+pymupdf4llm
+langchain_text_splitters
+
+tzdata
+
+black

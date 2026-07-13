@@ -26,8 +26,11 @@ async def start_cmd(message: Message, state: FSMContext):
 
     await get_or_create_user_service(user_id=message.from_user.id)
 
-    await message.answer(text=f"{send_greeting(username=message.from_user.first_name)}\
-            \nВыберите, что Вы хотите сделать:", reply_markup=main_kb())
+    await message.answer(
+        text=f"{send_greeting(username=message.from_user.first_name)}\
+            \nВыберите, что Вы хотите сделать:",
+        reply_markup=main_kb(),
+    )
 
 
 # --- Информационнная панель --- #
