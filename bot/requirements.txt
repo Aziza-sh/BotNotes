@@ -24,6 +24,6 @@ langchain-ollama
 pymupdf4llm
 langchain_text_splitters
 
+#---
 tzdata
-
 black

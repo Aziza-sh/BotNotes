@@ -70,8 +70,10 @@ async def statistic_cmd(message: Message, state: FSMContext):
         else:
             users_count = "<b>Информации о пользователях нет</b>!"
 
-        await message.answer(text=f"<b>СТАТИСТИКА:</b>\
-                \n\n{users_count}")
+        await message.answer(
+            text=f"<b>СТАТИСТИКА:</b>\
+                \n\n{users_count}"
+        )
 
 
 # --- Перейти в рассылку -> Написать текст --- #
