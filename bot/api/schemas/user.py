@@ -15,3 +15,7 @@ class ChangeAdminBody(BaseModel):
 
 class ChangeUploadedBody(BaseModel):
     amount: int
+
+
+class UserStatisticResponse(BaseModel):
+    uploaded_notes: int

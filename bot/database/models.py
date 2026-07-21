@@ -41,6 +41,8 @@ class User(BaseORM):
 
     uploaded_notes: int = fields.IntField(default=0)
 
+    messages_sent: int = fields.IntField(default=0)
+
     is_admin: bool = fields.BooleanField(default=False)
 
     class Meta:

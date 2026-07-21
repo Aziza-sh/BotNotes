@@ -4,7 +4,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.markdown import hlink
 from aiogram.types import Message, ReplyKeyboardRemove
 
-from database.services import get_or_create_user_service, get_users_service
+from database.services import (
+    get_or_create_user_service,
+    get_user_statistic_service,
+    get_users_service,
+)
 from functions.greeting import send_greeting
 
 from elements.inline.other_inline import support_button
@@ -74,6 +78,19 @@ async def statistic_cmd(message: Message, state: FSMContext):
             text=f"<b>СТАТИСТИКА:</b>\
                 \n\n{users_count}"
         )
+        return
+
+    await get_or_create_user_service(user_id=message.from_user.id)
+    stats = await get_user_statistic_service(user_id=message.from_user.id)
+
+    if stats.get("message"):
+        await message.answer(text=f"⚠️ {stats['message']}")
+        return
+
+    await message.answer(
+        text=f"<b>ВАША СТАТИСТИКА:</b>\
+            \n\n<b>Одобрено конспектов:</b> <code>{stats['uploaded_notes']}</code>"
+    )
 
 
 # --- Перейти в рассылку -> Написать текст --- #

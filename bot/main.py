@@ -85,6 +85,8 @@ async def init_db() -> None:
 async def run_bot() -> None:
     os.makedirs(NOTES_STORAGE_PATH, exist_ok=True)
 
+
+
     dp.include_routers(
         error_handler.router,
         states_group.router,

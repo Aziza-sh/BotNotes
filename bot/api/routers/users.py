@@ -6,12 +6,14 @@ from database.services import (
     is_admin_service,
     change_admin_service,
     change_uploaded_notes_service,
+    get_user_statistic_service,
 )
 from api.schemas.user import (
     UserResponse,
     AdminStatusResponse,
     ChangeAdminBody,
     ChangeUploadedBody,
+    UserStatisticResponse,
 )
 
 router = APIRouter()
@@ -51,6 +53,18 @@ async def set_admin_status(user_id: int, body: ChangeAdminBody):
     if result.get("message"):
         raise HTTPException(status_code=404, detail=result["message"])
     return {"detail": f"Статус администратора изменён на {body.status}"}
+
+
+@router.get(
+    "/{user_id}/statistic",
+    response_model=UserStatisticResponse,
+    summary="Статистика пользователя (кол-во одобренных конспектов)",
+)
+async def get_user_statistic(user_id: int):
+    result = await get_user_statistic_service(user_id=user_id)
+    if result.get("message"):
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result
 
 
 @router.patch(

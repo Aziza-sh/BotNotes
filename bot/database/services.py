@@ -51,6 +51,18 @@ async def change_uploaded_notes_service(user_id: int, amount: int) -> dict:
 
 
 @atomic()
+async def get_user_statistic_service(user_id: int) -> dict:
+
+    user = await User.get_or_none(user_id=user_id)
+    if not user:
+        return {"message": "Пользователь не найден"}
+    return {
+        "uploaded_notes": user.uploaded_notes,
+        "message": "",
+    }
+
+
+@atomic()
 async def create_note_service(
     user_id: int,
     building_name: str,
