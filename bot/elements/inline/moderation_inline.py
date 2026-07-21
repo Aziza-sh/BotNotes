@@ -14,3 +14,18 @@ def moderation_button(user_id: int, message_id: int) -> InlineKeyboardBuilder:
     )
 
     return builder
+
+
+def teacher_moderation_button(user_id: int, course: str | int) -> InlineKeyboardBuilder:
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(
+            text="✅ Добавить",
+            callback_data=f"modteacher_approve_{user_id}_{course}",
+        ),
+        InlineKeyboardButton(
+            text="❌ Отклонить", callback_data=f"modteacher_reject_{user_id}"
+        ),
+    )
+
+    return builder

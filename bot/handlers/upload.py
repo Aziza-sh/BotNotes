@@ -4,7 +4,10 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 
-from elements.inline.moderation_inline import moderation_button
+from elements.inline.moderation_inline import (
+    moderation_button,
+    teacher_moderation_button,
+)
 from elements.keybord.kb import cancel_kb
 from elements.keybord.text_on_kb import share
 
@@ -60,7 +63,7 @@ async def course_select_handler(callback: CallbackQuery, state: FSMContext):
     await state.update_data(course_number=course_num)
     await callback.message.edit_text(
         text="Выберите преподавателя:",
-        reply_markup=teachers_buttons(course=course_num, page=0),
+        reply_markup=await teachers_buttons(course=course_num, page=0),
     )
     await state.set_state(Registration.teacher_name)
 
@@ -73,8 +76,60 @@ async def teachers_pagination_handler(callback: CallbackQuery, state: FSMContext
     await state.update_data(course_number=course_num)
     await callback.message.edit_text(
         text="Выберите преподавателя:",
-        reply_markup=teachers_buttons(course=course_num, page=page),
+        reply_markup=await teachers_buttons(course=course_num, page=page),
     )
+
+
+@router.callback_query(F.data.startswith("no_teacher "))
+async def no_teacher_handler(callback: CallbackQuery, state: FSMContext):
+    course_num = callback.data.split(" ")[1]
+    await state.update_data(course_number=course_num)
+    await callback.message.edit_text(
+        text=(
+            "Введите ФИО преподавателя, которого нет в списке "
+            "(Фамилия Имя Отчество):"
+        ),
+        reply_markup=None,
+    )
+    await state.set_state(Registration.custom_teacher_name)
+
+
+@router.message(Registration.custom_teacher_name, F.text)
+async def custom_teacher_name_handler(message: Message, state: FSMContext, bot):
+    full_name = re.sub(r"[<>]", "", message.text.strip())[:150]
+
+    if len(full_name.split()) < 2 or len(full_name) < 5:
+        return await message.answer(
+            "Введите корректное ФИО преподавателя (минимум фамилия и имя):"
+        )
+
+    data = await state.get_data()
+    course_num = data.get("course_number")
+
+    await state.update_data(teacher_name=full_name)
+
+    await bot.send_message(
+        chat_id=bot.MODER_CHANNEL,
+        text=(
+            "🆕 Заявка на добавление преподавателя\n"
+            f"📚 Курс: {course_num}\n"
+            f"👨‍🏫 ФИО: {full_name}\n"
+            f"👤 Пользователь: @{message.from_user.username or 'отсутствует'} "
+            f"(<code>{message.from_user.id}</code>)"
+        ),
+        reply_markup=teacher_moderation_button(
+            user_id=message.from_user.id, course=course_num
+        ).as_markup(),
+    )
+
+    await message.answer(
+        text=(
+            "Заявка на добавление преподавателя отправлена на модерацию ✍\n"
+            "Продолжаем оформление конспекта.\n\n"
+            "Напишите название конспекта (10-150 символов):"
+        )
+    )
+    await state.set_state(Registration.lesson_name)
 
 
 @router.callback_query(F.data.startswith("t "))

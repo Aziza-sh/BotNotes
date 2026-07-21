@@ -6,7 +6,11 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
 from functions.files import save_file_to_storage
-from database.services import change_uploaded_notes_service, create_note_service
+from database.services import (
+    change_uploaded_notes_service,
+    create_note_service,
+    add_custom_teacher_service,
+)
 
 router = Router()
 
@@ -125,6 +129,98 @@ async def reject_note(callback: CallbackQuery, bot):
         await bot.send_message(
             chat_id=user_id,
             text=f"😕 Ваш конспект <code>{note_name}</code> был отклонён.",
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        await callback.answer(f"Ошибка: {str(e)}", show_alert=True)
+
+
+# Одобряем добавление преподавателя + заносим в БД
+
+
+@router.callback_query(F.data.startswith("modteacher_approve_"))
+async def approve_teacher(callback: CallbackQuery, bot):
+    try:
+        parts = callback.data.split("_")
+        user_id = int(parts[2])
+        course = int(parts[3])
+
+        message = callback.message
+        text = message.text
+
+        if not text:
+            return await callback.answer("Текст заявки отсутствует", show_alert=True)
+
+        teacher_match = re.search(r"ФИО: (.+?)(?:\n|$)", text)
+
+        if not teacher_match:
+            return await callback.answer("Ошибка чтения ФИО из заявки", show_alert=True)
+
+        full_name = teacher_match.group(1).strip()
+
+        result = await add_custom_teacher_service(course=course, full_name=full_name)
+
+        if result.get("message"):
+            return await callback.answer(
+                f"Ошибка сохранения: {result['message']}", show_alert=True
+            )
+
+        await message.edit_reply_markup(reply_markup=None)
+
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=(
+                f"✅ Преподаватель добавлен модератором "
+                f"@{callback.from_user.username or callback.from_user.id} "
+                f"(<code>{callback.from_user.id}</code>)"
+            ),
+        )
+
+        await bot.send_message(
+            chat_id=user_id,
+            text=(
+                f"🎉 Преподаватель <code>{full_name}</code> добавлен в список "
+                f"для {course} курса!"
+            ),
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        await callback.answer(f"Ошибка: {str(e)}", show_alert=True)
+
+
+# Отклоняем добавление преподавателя
+
+
+@router.callback_query(F.data.startswith("modteacher_reject_"))
+async def reject_teacher(callback: CallbackQuery, bot):
+    try:
+        user_id = int(callback.data.split("_")[2])
+
+        message = callback.message
+        text = message.text
+
+        teacher_match = re.search(r"ФИО: (.+?)(?:\n|$)", text) if text else None
+        full_name = teacher_match.group(1).strip() if teacher_match else "неизвестно"
+
+        await message.edit_reply_markup(reply_markup=None)
+
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=(
+                f"❌ Заявка отклонена модератором "
+                f"@{callback.from_user.username or callback.from_user.id} "
+                f"(<code>{callback.from_user.id}</code>)"
+            ),
+        )
+
+        await bot.send_message(
+            chat_id=user_id,
+            text=(
+                f"😕 Заявка на добавление преподавателя <code>{full_name}</code> "
+                f"была отклонена."
+            ),
         )
 
     except Exception as e:

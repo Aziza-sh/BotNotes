@@ -49,6 +49,16 @@ class User(BaseORM):
         table = "users"
 
 
+class CustomTeacher(BaseORM):
+
+    course: int = fields.IntField()
+
+    full_name: str = fields.CharField(max_length=300)
+
+    class Meta:
+        table = "custom_teachers"
+
+
 class Notes(BaseORM):
     user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         "models.User",

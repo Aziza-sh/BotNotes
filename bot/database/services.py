@@ -3,7 +3,7 @@ import shutil
 
 from tortoise.transactions import atomic
 
-from .models import User, Notes
+from .models import User, Notes, CustomTeacher
 
 
 async def get_users_service() -> list[dict]:
@@ -97,18 +97,41 @@ async def get_notes_service() -> list[dict]:
 
 
 @atomic()
-async def get_teachers(course: int, building_name: str) -> list[str]:
+async def get_teachers(course: int) -> list[str]:
 
     result: list[str] = (
         await Notes.filter(
             course=course,
-            building_name=building_name,
             is_deleted=False,
         )
         .distinct()
         .values_list("teacher", flat=True)
     )
     return sorted(result)
+
+
+@atomic()
+async def get_custom_teachers_service(course: int) -> list[str]:
+
+    result: list[str] = (
+        await CustomTeacher.filter(course=course, is_deleted=False)
+        .distinct()
+        .values_list("full_name", flat=True)
+    )
+    return sorted(result)
+
+
+@atomic()
+async def add_custom_teacher_service(course: int, full_name: str) -> dict:
+
+    existing = await CustomTeacher.get_or_none(
+        course=course, full_name=full_name, is_deleted=False
+    )
+    if existing:
+        return {"data": existing, "message": ""}
+
+    teacher = await CustomTeacher.create(course=course, full_name=full_name)
+    return {"data": teacher, "message": ""}
 
 
 @atomic()

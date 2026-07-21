@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from elements.teachers import first_course, second_course, third_course, fourth_course
-from database.services import get_teachers
+from database.services import get_teachers, get_custom_teachers_service
 
 
 def buildings_buttons() -> InlineKeyboardMarkup:
@@ -41,21 +41,27 @@ def courses_buttons() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-def teachers_buttons(
+async def teachers_buttons(
     course: str | int, page: int = 0, in_page: int = 7
 ) -> InlineKeyboardMarkup:
 
     match int(course):
         case 1:
-            TEACHERS = first_course
+            TEACHERS = list(first_course)
         case 2:
-            TEACHERS = second_course
+            TEACHERS = list(second_course)
         case 3:
-            TEACHERS = third_course
+            TEACHERS = list(third_course)
         case 4:
-            TEACHERS = fourth_course
+            TEACHERS = list(fourth_course)
         case _:
-            TEACHERS = first_course
+            TEACHERS = list(first_course)
+
+    custom_teachers = await get_custom_teachers_service(course=int(course))
+    for full_name in custom_teachers:
+        if full_name not in TEACHERS:
+            TEACHERS.append(full_name)
+    TEACHERS.sort()
 
     start = page * in_page
     end = start + in_page
@@ -93,6 +99,16 @@ def teachers_buttons(
         )
 
     inline_kb_list.append(navigation_buttons)
+
+    inline_kb_list.append(
+        [
+            InlineKeyboardButton(
+                text="🙋 Нет преподавателя в списке",
+                callback_data=f"no_teacher {course}",
+            )
+        ]
+    )
+
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 

@@ -22,6 +22,7 @@ class Registration(StatesGroup):
     building_name = State()
     course_number = State()
     teacher_name = State()
+    custom_teacher_name = State()
     lesson_name = State()
     upload_file = State()
 
