@@ -85,8 +85,9 @@ async def search_notes(
 )
 async def list_teachers(
     course: int = Query(...),
+    building_name: str = Query(...),
 ):
-    teachers = await get_teachers(course=course)
+    teachers = await get_teachers(course=course, building_name=building_name)
     return {"teachers": teachers}
 
 

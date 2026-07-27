@@ -1,6 +1,44 @@
+import hashlib
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from elements.teachers import first_course, second_course, third_course, fourth_course
 from database.services import get_teachers, get_custom_teachers_service
+
+
+def teacher_token(full_name: str) -> str:
+    """Стабильный короткий токен для полного ФИО.
+    Кладём его в callback_data вместо самого имени, чтобы:
+      - не обрезать ФИО под лимит текста кнопки/callback_data;
+      - не терять отчество/длинные фамилии при сохранении в БД.
+    """
+    return hashlib.md5(full_name.encode("utf-8")).hexdigest()[:12]
+
+
+async def get_upload_teachers_list(course: str | int) -> list[str]:
+    """Собирает полный (не обрезанный) список преподавателей для курса:
+    статический список + добавленные модератором кастомные преподаватели.
+    Используется и при построении кнопок, и при разборе выбора преподавателя,
+    чтобы токен всегда резолвился в одно и то же полное имя.
+    """
+    match int(course):
+        case 1:
+            TEACHERS = list(first_course)
+        case 2:
+            TEACHERS = list(second_course)
+        case 3:
+            TEACHERS = list(third_course)
+        case 4:
+            TEACHERS = list(fourth_course)
+        case _:
+            TEACHERS = list(first_course)
+
+    custom_teachers = await get_custom_teachers_service(course=int(course))
+    for full_name in custom_teachers:
+        if full_name not in TEACHERS:
+            TEACHERS.append(full_name)
+    TEACHERS.sort()
+
+    return TEACHERS
 
 
 def buildings_buttons() -> InlineKeyboardMarkup:
@@ -45,38 +83,18 @@ async def teachers_buttons(
     course: str | int, page: int = 0, in_page: int = 7
 ) -> InlineKeyboardMarkup:
 
-    match int(course):
-        case 1:
-            TEACHERS = list(first_course)
-        case 2:
-            TEACHERS = list(second_course)
-        case 3:
-            TEACHERS = list(third_course)
-        case 4:
-            TEACHERS = list(fourth_course)
-        case _:
-            TEACHERS = list(first_course)
-
-    custom_teachers = await get_custom_teachers_service(course=int(course))
-    for full_name in custom_teachers:
-        if full_name not in TEACHERS:
-            TEACHERS.append(full_name)
-    TEACHERS.sort()
+    TEACHERS = await get_upload_teachers_list(course)
 
     start = page * in_page
     end = start + in_page
     inline_kb_list = []
 
     for full_name in TEACHERS[start:end]:
-        name_parts = full_name.split()
-        if not name_parts[0].isalpha():
-            short_name = name_parts[0][:20]
-        elif len(name_parts) > 1:
-            short_name = f"{name_parts[0][:15]} {name_parts[1][:14]}"
-        else:
-            short_name = name_parts[0][:20]
-
-        callback_data = f"t {short_name}"
+        # Раньше в callback_data клали ОБРЕЗАННОЕ имя (short_name), и именно
+        # оно потом сохранялось в БД как ФИО преподавателя. Теперь в тексте
+        # кнопки — полное имя (видно пользователю), а в callback_data —
+        # только токен для однозначного поиска полного имени в хендлере.
+        callback_data = f"t {teacher_token(full_name)}"
         inline_kb_list.append(
             [InlineKeyboardButton(text=full_name, callback_data=callback_data)]
         )
@@ -180,15 +198,8 @@ async def teachers_buttons_view(
     end = start + in_page
 
     for full_name in TEACHERS[start:end]:
-        name_parts = full_name.split()
-        if not name_parts[0].isalpha():
-            short_name = name_parts[0][:20]
-        elif len(name_parts) > 1:
-            short_name = f"{name_parts[0][:15]}_{name_parts[1][:14]}"
-        else:
-            short_name = name_parts[0][:20]
-
-        callback_data = f"t_{short_name}"
+        # Аналогично: полное имя — в тексте кнопки, токен — в callback_data.
+        callback_data = f"t_{teacher_token(full_name)}"
         inline_kb_list.append(
             [InlineKeyboardButton(text=full_name, callback_data=callback_data)]
         )

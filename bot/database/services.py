@@ -97,15 +97,19 @@ async def get_notes_service() -> list[dict]:
 
 
 @atomic()
-async def get_teachers(course: int) -> list[str]:
+async def get_teachers(course: int, building_name: str | None = None) -> list[str]:
+    """Раньше принимала только course, но вызывалась ещё и с building_name
+    (elements/inline/file_inline.py -> teachers_buttons_view), из-за чего
+    падала с TypeError и экран "Просмотр конспектов" молча ломался.
+    Теперь building_name — опциональный фильтр, старые вызовы с одним
+    course (см. api/routers/notes.py) продолжают работать как раньше.
+    """
+    filters: dict = {"course": course, "is_deleted": False}
+    if building_name:
+        filters["building_name"] = building_name
 
     result: list[str] = (
-        await Notes.filter(
-            course=course,
-            is_deleted=False,
-        )
-        .distinct()
-        .values_list("teacher", flat=True)
+        await Notes.filter(**filters).distinct().values_list("teacher", flat=True)
     )
     return sorted(result)
 

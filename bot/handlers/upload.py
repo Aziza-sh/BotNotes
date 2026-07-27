@@ -17,6 +17,8 @@ from elements.inline.file_inline import (
     buildings_buttons,
     courses_buttons,
     teachers_buttons,
+    get_upload_teachers_list,
+    teacher_token,
 )
 
 router = Router()
@@ -134,8 +136,24 @@ async def custom_teacher_name_handler(message: Message, state: FSMContext, bot):
 
 @router.callback_query(F.data.startswith("t "))
 async def teacher_select_handler(callback: CallbackQuery, state: FSMContext):
-    parts = callback.data.split(" ")
-    teacher_name = " ".join(parts[1:])
+    token = callback.data.split(" ", 1)[1]
+
+    data = await state.get_data()
+    course_num = data.get("course_number")
+
+    TEACHERS = await get_upload_teachers_list(course_num)
+
+    teacher_name = next(
+        (name for name in TEACHERS if teacher_token(name) == token), None
+    )
+
+    if teacher_name is None:
+        # Список преподавателей мог обновиться (добавили нового) — просим
+        # выбрать заново, вместо того чтобы молча сохранить неверное имя.
+        return await callback.answer(
+            "Список преподавателей обновился, выберите ещё раз", show_alert=True
+        )
+
     await state.update_data(teacher_name=teacher_name)
     await callback.message.edit_text(
         text="Напишите название конспекта (10-150 символов):", reply_markup=None

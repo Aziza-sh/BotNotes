@@ -15,10 +15,11 @@ from elements.inline.file_inline import (
     courses_buttons_view,
     teachers_buttons_view,
     buildings_buttons_view,
+    teacher_token,
 )
 
 
-from database.services import get_teacher_note_service
+from database.services import get_teacher_note_service, get_teachers
 
 from database.models import Notes
 
@@ -151,9 +152,7 @@ async def paginate_teachers_handler(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("t_"))
 async def teacher_selection_handler(callback: CallbackQuery, state: FSMContext):
     try:
-        teacher_name = callback.data[2:]
-
-        teacher_name = teacher_name.replace("_", " ")
+        token = callback.data[2:]
 
         data = await state.get_data()
 
@@ -166,6 +165,19 @@ async def teacher_selection_handler(callback: CallbackQuery, state: FSMContext):
 
         if not course_number:
             return await callback.answer("Курс не найден", show_alert=True)
+
+        TEACHERS = await get_teachers(
+            course=int(course_number), building_name=building_name
+        )
+
+        teacher_name = next(
+            (name for name in TEACHERS if teacher_token(name) == token), None
+        )
+
+        if teacher_name is None:
+            return await callback.answer(
+                "Список преподавателей обновился, выберите ещё раз", show_alert=True
+            )
 
         notes = await get_teacher_note_service(
             name=teacher_name, course=int(course_number), building_name=building_name

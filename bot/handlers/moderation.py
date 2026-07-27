@@ -20,6 +20,9 @@ router = Router()
 
 @router.callback_query(F.data.startswith("mod_approve_"))
 async def approve_note(callback: CallbackQuery, bot):
+    if callback.from_user.id not in bot.ADMIN_CHATS:
+        return await callback.answer("Нет прав", show_alert=True)
+
     try:
         parts = callback.data.split("_")
         user_id = int(parts[2])
@@ -106,6 +109,9 @@ async def approve_note(callback: CallbackQuery, bot):
 
 @router.callback_query(F.data.startswith("mod_reject_"))
 async def reject_note(callback: CallbackQuery, bot):
+    if callback.from_user.id not in bot.ADMIN_CHATS:
+        return await callback.answer("Нет прав", show_alert=True)
+
     try:
         user_id = int(callback.data.split("_")[2])
 
@@ -141,6 +147,9 @@ async def reject_note(callback: CallbackQuery, bot):
 
 @router.callback_query(F.data.startswith("modteacher_approve_"))
 async def approve_teacher(callback: CallbackQuery, bot):
+    if callback.from_user.id not in bot.ADMIN_CHATS:
+        return await callback.answer("Нет прав", show_alert=True)
+
     try:
         parts = callback.data.split("_")
         user_id = int(parts[2])
@@ -195,6 +204,9 @@ async def approve_teacher(callback: CallbackQuery, bot):
 
 @router.callback_query(F.data.startswith("modteacher_reject_"))
 async def reject_teacher(callback: CallbackQuery, bot):
+    if callback.from_user.id not in bot.ADMIN_CHATS:
+        return await callback.answer("Нет прав", show_alert=True)
+
     try:
         user_id = int(callback.data.split("_")[2])
 
