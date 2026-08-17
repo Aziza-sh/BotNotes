@@ -5,7 +5,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from elements.keybord.kb import cancel_kb
+from elements.keybord.kb import cancel_kb, main_kb
 from elements.keybord.text_on_kb import view
 
 from elements.inline.notes_inline import create_notes_buttons
@@ -209,28 +209,15 @@ async def note_selection_handler(callback: CallbackQuery):
 
         if note.telegram_file_id:
 
-            if note.telegram_file_type == "photo":
-
-                await callback.message.answer_photo(
-                    photo=note.telegram_file_id,
-                    caption=(
-                        f"📄 {note.note_name}\n\n"
-                        f"👨‍🏫 {note.teacher}\n"
-                        f"🏫 {note.building_name}"
-                    ),
-                )
-
-            else:
-
-                await callback.message.answer_document(
-                    document=note.telegram_file_id,
-                    caption=(
-                        f"📄 {note.note_name}\n\n"
-                        f"👨‍🏫 {note.teacher}\n"
-                        f"🏫 {note.building_name}"
-                    ),
-                    reply_markup=note_ai_keyboard(note.id),
-                )
+            await callback.message.answer_document(
+                document=note.telegram_file_id,
+                caption=(
+                    f"📄 {note.note_name}\n\n"
+                    f"👨‍🏫 {note.teacher}\n"
+                    f"🏫 {note.building_name}"
+                ),
+                reply_markup=note_ai_keyboard(note.id),
+            )
 
         else:
 
@@ -251,10 +238,8 @@ async def note_selection_handler(callback: CallbackQuery):
                     f"👨‍🏫 {note.teacher}\n"
                     f"🏫 {note.building_name}"
                 ),
-                reply_markup=note_ai_keyboard(note.id),
+                reply_markup=main_kb(),
             )
-
-        await callback.answer()
 
     except Exception:
         traceback.print_exc()

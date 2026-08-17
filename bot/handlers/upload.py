@@ -8,7 +8,7 @@ from elements.inline.moderation_inline import (
     moderation_button,
     teacher_moderation_button,
 )
-from elements.keybord.kb import cancel_kb
+from elements.keybord.kb import cancel_kb, main_kb
 from elements.keybord.text_on_kb import share
 
 from events.states_group import Registration
@@ -167,7 +167,7 @@ async def lesson_name_handler(message: Message, state: FSMContext):
     if len(lesson_name) < 10:
         return await message.answer("Название должно быть от 10 до 150 символов")
     await state.update_data(lesson_name=lesson_name)
-    await message.answer(text="Отправьте конспект (фото или документ):")
+    await message.answer(text="Отправьте конспект (документ):")
     await state.set_state(Registration.upload_file)
 
 
@@ -184,17 +184,7 @@ async def upload_file_handler(message: Message, state: FSMContext, bot):
         f"(<code>{message.from_user.id}</code>)"
     )
 
-    if message.photo:
-        await bot.send_photo(
-            chat_id=bot.MODER_CHANNEL,
-            photo=message.photo[-1].file_id,
-            caption=caption,
-            reply_markup=moderation_button(
-                user_id=message.from_user.id, message_id=message.message_id
-            ).as_markup(),
-        )
-
-    elif message.document:
+    if message.document:
         await bot.send_document(
             chat_id=bot.MODER_CHANNEL,
             document=message.document.file_id,
@@ -205,9 +195,12 @@ async def upload_file_handler(message: Message, state: FSMContext, bot):
         )
 
     else:
-        return await message.answer("Отправьте фото или документ")
+        return await message.answer("Отправьте документ с конспектом")
 
-    await message.answer(
-        text="Конспект отправлен на модерацию!", reply_markup=ReplyKeyboardRemove()
-    )
     await state.clear()
+
+    # Возвращаем основную клавиатуру внизу, чтобы цепочка не обрывалась
+    await message.answer(
+        text="Конспект отправлен на модерацию!",
+        reply_markup=main_kb(),
+    )

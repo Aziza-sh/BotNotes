@@ -1,0 +1,20 @@
+services:
+  botnotes:
+    build: .
+    container_name: botnotes
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/data/db.sqlite3
+    ports:
+      - "8000:8000"  
+    volumes:
+      - ./data:/app/data   
+    networks:
+      - botnotes_net
+
+networks:
+  botnotes_net:
+    driver: bridge

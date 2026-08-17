@@ -1,29 +1,28 @@
-# Telegram
-aiogram>=3.22.0
-aiohttp-socks>=0.10.1
+# --- Telegram ---
+aiogram>=3.14.0,<4.0.0          
+aiohttp-socks>=0.9.0,<1.0.0     
+# --- API ---
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.32.0,<1.0.0
 
-# API
-fastapi>=0.116.0
-uvicorn[standard]>=0.35.0
+# --- Database ---
+tortoise-orm>=1.1.0,<2.0.0       
+aiosqlite>=0.20.0,<1.0.0
 
-# Database
-tortoise-orm>=0.25.1
-aiosqlite>=0.21.0
+# --- Logging ---
+loguru>=0.7.2,<0.8.0
 
-# Logging
-loguru>=0.7.3
+# --- Cache ---
+redis>=5.2.0,<6.0.0             
 
-# Cache
-redis>=6.2.0
+# --- AI & Parsing ---
+python-docx>=1.1.2,<2.0.0
+langchain>=0.3.0,<0.4.0         
+langchain-core>=0.3.0,<0.4.0
+langchain-ollama>=0.2.0,<0.3.0
+pymupdf4llm>=0.0.17             
+langchain-text-splitters>=0.3.0,<0.4.0
 
-#AI
-python-docx
-langchain
-langchain-core
-langchain-ollama
-pymupdf4llm
-langchain_text_splitters
-
-#---
-tzdata
-black
+# --- System & Dev 
+tzdata>=2024.1
+black>=24.10.0
