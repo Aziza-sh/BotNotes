@@ -3,87 +3,101 @@ import os
 import socket
 
 import uvicorn
-from aiogram import Bot, Dispatcher
-from aiogram.client.bot import DefaultBotProperties
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
 from loguru import logger
 from tortoise import Tortoise
 
-from config.cfg import (
-    ADMIN_CHATS,
-    API_HOST,
-    API_PORT,
-    MODE,
-    MODER_CHANNEL_ID,
-    NOTES_STORAGE_PATH,
-    TEST_MODER_CHANNEL_ID,
-    cfg,
-)
+from config.cfg import API_HOST, API_PORT
 from events import error_handler, states_group
+from functions.storage import ensure_bucket
 from handlers import (
     commands_handler,
     inline_notes,
     moderation,
     review_notes,
     upload,
-    summary,
 )
 from handlers.utils import mailing
 
-TOKEN = cfg["SETTINGS"]["testing_token"] if MODE == "DEV" else cfg["SETTINGS"]["token"]
-M_CHANNEL = TEST_MODER_CHANNEL_ID if MODE == "DEV" else MODER_CHANNEL_ID
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ─── Поиск прокси
-PROXY_PORTS = [10809, 10808, 11111, 7890, 2334, 1080, 8080]
+DB_DIR = os.path.join(BASE_DIR, "storage")
+DB_PATH = os.path.join(DB_DIR, "database.db")
 
-
-def find_proxy() -> str | None:
-    for port in PROXY_PORTS:
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=1):
-                logger.info(f"Найден прокси на порту {port}")
-                return f"http://127.0.0.1:{port}"
-        except OSError:
-            continue
-    return None
-
-
-proxy_url = find_proxy()
-session = AiohttpSession(proxy=proxy_url) if proxy_url else AiohttpSession()
-if proxy_url:
-    logger.info(f"Запуск с прокси: {proxy_url}")
-else:
-    logger.warning("Прокси не найден — запуск без прокси")
-
-bot = Bot(
-    token=TOKEN,
-    session=session,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-)
-
-bot.config = cfg
-bot.ADMIN_CHATS = ADMIN_CHATS
-bot.MODER_CHANNEL = M_CHANNEL
-
-storage = MemoryStorage()
-dp = Dispatcher(storage=storage)
+# Какую роль играет этот процесс/контейнер:
+#   "all" — бот + API в одном процессе (по умолчанию, для локальной разработки)
+#   "bot" — только Telegram-бот (aiogram polling)
+#   "api" — только REST API (uvicorn)
+SERVICE_ROLE = os.getenv("SERVICE_ROLE", "all").strip().lower()
 
 
 async def init_db() -> None:
+    os.makedirs(DB_DIR, exist_ok=True)
     await Tortoise.init(
-        db_url=f"sqlite://{BASE_DIR}/database/database.db",
+        db_url=f"sqlite://{DB_PATH}",
         modules={"models": ["database.models"]},
     )
     await Tortoise.generate_schemas()
     logger.success("База данных инициализирована")
 
 
+def build_bot_and_dispatcher():
+    from aiogram import Bot, Dispatcher
+    from aiogram.client.bot import DefaultBotProperties
+    from aiogram.client.session.aiohttp import AiohttpSession
+    from aiogram.enums import ParseMode
+    from aiogram.fsm.storage.memory import MemoryStorage
+
+    from config.cfg import (
+        ADMIN_CHATS,
+        MODE,
+        MODER_CHANNEL_ID,
+        TEST_MODER_CHANNEL_ID,
+        cfg,
+    )
+
+    token = (
+        cfg["SETTINGS"]["testing_token"] if MODE == "DEV" else cfg["SETTINGS"]["token"]
+    )
+    m_channel = TEST_MODER_CHANNEL_ID if MODE == "DEV" else MODER_CHANNEL_ID
+
+    proxy_ports = [10809, 10808, 11111, 7890, 2334, 1080, 8080]
+    proxy_host = os.getenv("PROXY_HOST", "127.0.0.1")
+
+    def find_proxy() -> str | None:
+        for port in proxy_ports:
+            try:
+                with socket.create_connection((proxy_host, port), timeout=1):
+                    logger.info(f"Найден прокси на {proxy_host}:{port}")
+                    return f"http://{proxy_host}:{port}"
+            except OSError:
+                continue
+        return None
+
+    proxy_url = find_proxy()
+    session = AiohttpSession(proxy=proxy_url) if proxy_url else AiohttpSession()
+    if proxy_url:
+        logger.info(f"Запуск с прокси: {proxy_url}")
+    else:
+        logger.warning("Прокси не найден — запуск без прокси")
+
+    bot = Bot(
+        token=token,
+        session=session,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
+
+    bot.config = cfg
+    bot.ADMIN_CHATS = ADMIN_CHATS
+    bot.MODER_CHANNEL = m_channel
+
+    storage = MemoryStorage()
+    dp = Dispatcher(storage=storage)
+
+    return bot, dp
+
+
 async def run_bot() -> None:
-    os.makedirs(NOTES_STORAGE_PATH, exist_ok=True)
+    bot, dp = build_bot_and_dispatcher()
 
     dp.include_routers(
         error_handler.router,
@@ -94,7 +108,6 @@ async def run_bot() -> None:
         moderation.router,
         mailing.router,
         inline_notes.router,
-        summary.router,
     )
 
     await bot.delete_webhook(drop_pending_updates=True)
@@ -122,10 +135,17 @@ async def run_api() -> None:
 
 async def main() -> None:
     await init_db()
-    await asyncio.gather(
-        run_bot(),
-        run_api(),
-    )
+    await ensure_bucket()
+
+    if SERVICE_ROLE == "bot":
+        logger.info("Роль сервиса: только бот")
+        await run_bot()
+    elif SERVICE_ROLE == "api":
+        logger.info("Роль сервиса: только API")
+        await run_api()
+    else:
+        logger.info("Роль сервиса: бот + API в одном процессе")
+        await asyncio.gather(run_bot(), run_api())
 
 
 if __name__ == "__main__":

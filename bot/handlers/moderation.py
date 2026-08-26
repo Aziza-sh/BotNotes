@@ -1,4 +1,3 @@
-import os
 import re
 import traceback
 
@@ -6,6 +5,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
 from functions.files import save_file_to_storage
+from functions.storage import delete_object
 from database.services import (
     change_uploaded_notes_service,
     create_note_service,
@@ -98,8 +98,8 @@ async def approve_note(callback: CallbackQuery, bot):
     except Exception as e:
         traceback.print_exc()
 
-        if "file_path" in locals() and os.path.exists(file_path):
-            os.remove(file_path)
+        if "file_path" in locals():
+            await delete_object(file_path)
 
         await callback.answer(f"Ошибка: {str(e)}", show_alert=True)
 

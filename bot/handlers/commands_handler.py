@@ -74,8 +74,10 @@ async def statistic_cmd(message: Message, state: FSMContext):
         else:
             users_count = "<b>Информации о пользователях нет</b>!"
 
-        await message.answer(text=f"<b>СТАТИСТИКА:</b>\
-                \n\n{users_count}")
+        await message.answer(
+            text=f"<b>СТАТИСТИКА:</b>\
+                \n\n{users_count}"
+        )
         return
 
     await get_or_create_user_service(user_id=message.from_user.id)
@@ -85,8 +87,10 @@ async def statistic_cmd(message: Message, state: FSMContext):
         await message.answer(text=f"⚠️ {stats['message']}")
         return
 
-    await message.answer(text=f"<b>ВАША СТАТИСТИКА:</b>\
-            \n\n<b>Одобрено конспектов:</b> <code>{stats['uploaded_notes']}</code>")
+    await message.answer(
+        text=f"<b>ВАША СТАТИСТИКА:</b>\
+            \n\n<b>Одобрено конспектов:</b> <code>{stats['uploaded_notes']}</code>"
+    )
 
 
 # --- Перейти в рассылку -> Написать текст --- #

@@ -1,4 +1,3 @@
-import os
 import traceback
 
 from aiogram import Router, F
@@ -22,6 +21,8 @@ from elements.inline.file_inline import (
 from database.services import get_teacher_note_service, get_teachers
 
 from database.models import Notes
+
+from functions.storage import download_to_temp, object_exists
 
 router = Router()
 
@@ -224,22 +225,27 @@ async def note_selection_handler(callback: CallbackQuery):
             if not note.note_path:
                 return await callback.answer("Файл отсутствует 💔", show_alert=True)
 
-            if not os.path.exists(note.note_path):
+            if not await object_exists(note.note_path):
                 return await callback.answer(
                     ("Файл конспекта " "не найден 💔"), show_alert=True
                 )
 
-            file = FSInputFile(note.note_path)
+            tmp_path = await download_to_temp(note.note_path)
 
-            await callback.message.answer_document(
-                document=file,
-                caption=(
-                    f"📄 {note.note_name}\n\n"
-                    f"👨‍🏫 {note.teacher}\n"
-                    f"🏫 {note.building_name}"
-                ),
-                reply_markup=main_kb(),
-            )
+            try:
+                file = FSInputFile(tmp_path)
+
+                await callback.message.answer_document(
+                    document=file,
+                    caption=(
+                        f"📄 {note.note_name}\n\n"
+                        f"👨‍🏫 {note.teacher}\n"
+                        f"🏫 {note.building_name}"
+                    ),
+                    reply_markup=main_kb(),
+                )
+            finally:
+                tmp_path.unlink(missing_ok=True)
 
     except Exception:
         traceback.print_exc()

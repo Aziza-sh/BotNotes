@@ -51,7 +51,9 @@ async def mailing_send(message: Message, state: FSMContext):
 
     elapsed_time = time.time() - start_time  # Вычисляем время, затраченное на рассылку
 
-    await message.answer(text=f"<b>Рассылка закончена!</b>\n\
+    await message.answer(
+        text=f"<b>Рассылка закончена!</b>\n\
             \nОтправлено пользователям: {user_counter}/{len(all_profiles)}.\
-            \n\n<i>Рассылка длилась <b>{elapsed_time:.2f} сек.</b></i>")
+            \n\n<i>Рассылка длилась <b>{elapsed_time:.2f} сек.</b></i>"
+    )
     await state.clear()

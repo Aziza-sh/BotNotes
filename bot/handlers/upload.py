@@ -148,8 +148,6 @@ async def teacher_select_handler(callback: CallbackQuery, state: FSMContext):
     )
 
     if teacher_name is None:
-        # Список преподавателей мог обновиться (добавили нового) — просим
-        # выбрать заново, вместо того чтобы молча сохранить неверное имя.
         return await callback.answer(
             "Список преподавателей обновился, выберите ещё раз", show_alert=True
         )

@@ -1,0 +1,59 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: botnotes_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+    ports:
+      - "9000:9000"   
+      - "9001:9001"   
+    volumes:
+      - minio_data:/data
+    networks:
+      - botnotes_net
+
+  api:
+    build: ./bot
+    container_name: botnotes_api
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      - SERVICE_ROLE=api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/storage
+    depends_on:
+      - minio
+    networks:
+      - botnotes_net
+
+  bot:
+    build: ./bot
+    container_name: botnotes_bot
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      - SERVICE_ROLE=bot
+      - HTTP_PROXY=socks5://127.0.0.1:10808
+      - HTTPS_PROXY=socks5://127.0.0.1:10808
+      - MINIO_ENDPOINT=localhost:9000
+    network_mode: "host"     
+    volumes:
+      - ./data:/app/storage
+    depends_on:
+      - minio
+
+volumes:
+  minio_data:
+
+networks:
+  botnotes_net:
+    driver: bridge
