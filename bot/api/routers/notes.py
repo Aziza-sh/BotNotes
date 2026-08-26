@@ -1,4 +1,10 @@
+import mimetypes
+import os
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from database.services import (
     get_notes_service,
@@ -7,7 +13,9 @@ from database.services import (
     get_teachers,
     get_teacher_note_service,
     search_notes_inline,
+    get_note_by_id_service,
 )
+from functions.storage import download_to_temp, object_exists
 from api.schemas.note import NoteCreate, NoteResponse, NoteUpdate
 from api.schemas.search import SearchNoteResponse
 from api.schemas.teacher import TeachersResponse
@@ -58,6 +66,34 @@ async def delete_note(note_id: int):
     if result.get("message"):
         raise HTTPException(status_code=404, detail=result["message"])
     return {"detail": "Конспект удалён"}
+
+
+@router.get("/{note_id}/file", summary="Скачать файл конспекта")
+async def download_note_file(note_id: int):
+    note = await get_note_by_id_service(note_id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Конспект не найден")
+
+    if not note.note_path:
+        raise HTTPException(status_code=404, detail="Файл конспекта отсутствует")
+
+    if not await object_exists(note.note_path):
+        raise HTTPException(
+            status_code=404, detail="Файл конспекта не найден в хранилище"
+        )
+
+    tmp_path = await download_to_temp(note.note_path)
+
+    ext = Path(note.note_path).suffix
+    filename = f"{note.note_name}{ext}" if ext else note.note_name
+    media_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+
+    return FileResponse(
+        path=tmp_path,
+        media_type=media_type,
+        filename=filename,
+        background=BackgroundTask(os.remove, tmp_path),
+    )
 
 
 @router.get(
