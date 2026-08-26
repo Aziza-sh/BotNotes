@@ -1,8 +1,6 @@
-import os
-import shutil
-
 from tortoise.transactions import atomic
 
+from functions.storage import delete_object
 from .models import User, Notes, CustomTeacher
 
 
@@ -186,11 +184,8 @@ async def delete_note_service(note_id: int) -> dict:
     if not note:
         return {"message": "Конспект не найден"}
 
-    if note.note_path and os.path.exists(note.note_path):
-        if os.path.isfile(note.note_path):
-            os.remove(note.note_path)
-        elif os.path.isdir(note.note_path):
-            shutil.rmtree(note.note_path, ignore_errors=True)
+    if note.note_path:
+        await delete_object(note.note_path)
 
     await note.delete()
     return {"message": ""}
