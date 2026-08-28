@@ -28,4 +28,4 @@ langchain-text-splitters>=0.3.0,<0.4.0
 
 # --- System & Dev 
 tzdata>=2024.1
-black>=24.10.0
+black==24.10.0
