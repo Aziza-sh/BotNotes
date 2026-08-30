@@ -1,6 +1,5 @@
 import asyncio
 import os
-import socket
 
 import uvicorn
 from loguru import logger
@@ -60,29 +59,9 @@ def build_bot_and_dispatcher():
     )
     m_channel = TEST_MODER_CHANNEL_ID if MODE == "DEV" else MODER_CHANNEL_ID
 
-    proxy_ports = [10809, 10808, 11111, 7890, 2334, 1080, 8080]
-    proxy_host = os.getenv("PROXY_HOST", "127.0.0.1")
-
-    def find_proxy() -> str | None:
-        for port in proxy_ports:
-            try:
-                with socket.create_connection((proxy_host, port), timeout=1):
-                    logger.info(f"Найден прокси на {proxy_host}:{port}")
-                    return f"http://{proxy_host}:{port}"
-            except OSError:
-                continue
-        return None
-
-    proxy_url = find_proxy()
-    session = AiohttpSession(proxy=proxy_url) if proxy_url else AiohttpSession()
-    if proxy_url:
-        logger.info(f"Запуск с прокси: {proxy_url}")
-    else:
-        logger.warning("Прокси не найден — запуск без прокси")
-
     bot = Bot(
         token=token,
-        session=session,
+        session=AiohttpSession(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 
