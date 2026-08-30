@@ -8,7 +8,6 @@ from elements.keybord.kb import cancel_kb, main_kb
 from elements.keybord.text_on_kb import view
 
 from elements.inline.notes_inline import create_notes_buttons
-from elements.inline.note_ai import note_ai_keyboard
 
 from elements.inline.file_inline import (
     courses_buttons_view,
@@ -217,7 +216,7 @@ async def note_selection_handler(callback: CallbackQuery):
                     f"👨‍🏫 {note.teacher}\n"
                     f"🏫 {note.building_name}"
                 ),
-                reply_markup=note_ai_keyboard(note.id),
+                reply_markup=main_kb(),
             )
 
         else:
