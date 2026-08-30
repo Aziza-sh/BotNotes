@@ -8,8 +8,8 @@ services:
       - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
       - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
     ports:
-      - "9000:9000"   
-      - "9001:9001"   
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # веб-консоль
     volumes:
       - minio_data:/data
     networks:
@@ -42,14 +42,20 @@ services:
       - .env
     environment:
       - SERVICE_ROLE=bot
+      # Прокси – SOCKS5 на localhost (доступен, т.к. мы в host-режиме)
       - HTTP_PROXY=socks5://127.0.0.1:10808
       - HTTPS_PROXY=socks5://127.0.0.1:10808
+      # Если ваш код использует переменную для адреса MinIO – укажите её
+      # Например, если у вас в коде читается MINIO_ENDPOINT:
       - MINIO_ENDPOINT=localhost:9000
-    network_mode: "host"     
+      # Если в коде используется другая переменная – замените соответственно
+    network_mode: "host"        # <-- главное – даём доступ к локальному прокси
     volumes:
       - ./data:/app/storage
     depends_on:
       - minio
+    # НЕ подключаем к botnotes_net, т.к. host-режим несовместим с networks
+    # extra_hosts тоже убираем
 
 volumes:
   minio_data:
