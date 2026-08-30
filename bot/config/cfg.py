@@ -9,10 +9,10 @@ MODE: str = os.getenv("BOT_MODE", "PROD")
 cfg = {
     "SETTINGS": {
         "token": os.getenv(
-            "BOT_TOKEN", "8934199632:AAGwEbQzFyiTdAZnpuU4-mmpfBUiFZhsqpU"
+            "BOT_TOKEN", "8934199632:AAE-QT97Kkwwy2hTRGEYQM1t8uqyxqKwX78"
         ),
         "testing_token": os.getenv(
-            "BOT_TEST_TOKEN", "7906750563:AAFgIO9v_6jZ4Y8_WciENxlFuhomCNg0gtM"
+            "BOT_TEST_TOKEN", "8934199632:AAE-QT97Kkwwy2hTRGEYQM1t8uqyxqKwX78"
         ),
         "version": "1.0.0",
         "name": "Bot Конспекты",
