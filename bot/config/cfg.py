@@ -4,16 +4,12 @@ _CFG_DIR = os.path.dirname(os.path.abspath(__file__))
 _BASE_DIR = os.path.dirname(_CFG_DIR)
 
 # Читаем режим работы ("DEV" по умолчанию)
-MODE: str = os.getenv("BOT_MODE", "PROD")
+MODE: str = os.getenv("BOT_MODE", "DEV")
 
 cfg = {
     "SETTINGS": {
-        "token": os.getenv(
-            "BOT_TOKEN", "8787944530:AAEsusOVQcXiiIs5rhlpDFChSDw3h_yiFA0",
-        ),
-        "testing_token": os.getenv(
-            "BOT_TEST_TOKEN", "8787944530:AAEsusOVQcXiiIs5rhlpDFChSDw3h_yiFA0",
-        ),
+        "token": os.getenv("BOT_TOKEN", "8934199632:AAELAxXXctTzvgdQspEWO4kk4nzGjkpGUoY"),
+        "testing_token": os.getenv("BOT_TEST_TOKEN", "8934199632:AAELAxXXctTzvgdQspEWO4kk4nzGjkpGUoY"),
         "version": "1.0.0",
         "name": "Bot Конспекты",
     },
